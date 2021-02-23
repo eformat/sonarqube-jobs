@@ -1,0 +1,54 @@
+{{- define "config-sonarqube" }}
+#!/bin/bash
+set -x
+
+# a standalone script for configuring sonarqube
+
+NS=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
+SONAR_USER={{ .Values.adminCreds | default "admin:admin" }}
+SONAR_URL=https://$(oc -n ${NS} get route sonarqube -o custom-columns=ROUTE:.spec.host --no-headers)
+
+echo "waiting for sonarqube pod ready..."
+oc -n ${NS} wait pod -lapp=sonarqube --for=condition=Ready --timeout=600s || exit $?
+sleep 2
+
+# check if gate exists, rename it to -old if it does (it may be default so cannot delete)
+if curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/show?name="{{ .Values.qualityGateName | default "AppDefault" }}"; then
+  echo Quality Gate {{ .Values.qualityGateName | default "AppDefault" }} already exists, renaming as {{ .Values.qualityGateName | default "AppDefault" }}-old
+  ID=$(curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/show?name={{ .Values.qualityGateName | default "AppDefault" }} | jq .id)
+  curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/rename?id=${ID}&name={{ .Values.qualityGateName | default "AppDefault" }}-old"
+fi
+
+# create default quality gate
+echo "creating {{ .Values.qualityGate.name | default "AppDefault" }} quality gate"
+ID=$(curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/create?name="{{ .Values.qualityGateName | default "AppDefault" }}" | jq .id)
+if [ null == "${ID}"]; then
+  echo "Null ID, Quality Gate may already exist, exiting"
+  exit 0
+fi
+
+# create conditions
+{{- if .Values.qualityGate.new_coverage.enabled }}
+curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/create_condition?gateId=${ID}&metric=new_coverage&op={{ .Values.qualityGate.new_coverage.op }}&error={{ .Values.qualityGate.new_coverage.error }}"
+{{- end }}
+{{- if .Values.qualityGate.new_security_rating.enabled }}
+curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/create_condition?gateId=${ID}&metric=new_security_rating&op={{ .Values.qualityGate.new_security_rating.op }}&error={{ .Values.qualityGate.new_security_rating.error }}"
+{{- end }}
+{{- if .Values.qualityGate.new_reliability_rating.enabled }}
+curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/create_condition?gateId=${ID}&metric=new_reliability_rating&op={{ .Values.qualityGate.new_reliability_rating.op }}&error={{ .Values.qualityGate.new_reliability_rating.error }}"
+{{- end }}
+{{- if .Values.qualityGate.new_maintainability_rating.enabled }}
+curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/create_condition?gateId=${ID}&metric=new_maintainability_rating&op={{ .Values.qualityGate.new_maintainability_rating.op }}&error={{ .Values.qualityGate.new_maintainability_rating.error }}"
+{{- end }}
+{{- if .Values.qualityGate.new_duplicated_lines_density.enabled }}
+curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/create_condition?gateId=${ID}&metric=new_duplicated_lines_density&op={{ .Values.qualityGate.new_duplicated_lines_density.op }}&error={{ .Values.qualityGate.new_duplicated_lines_density.error }}"
+{{- end }}
+{{- if .Values.qualityGate.setAsDefault }}
+curl -s -k --user "${SONAR_USER}" -X POST "${SONAR_URL}/api/qualitygates/set_as_default?id=${ID}"
+{{- end }}
+
+echo "{{ .Values.qualityGate.name | default "AppDefault" }} quality gate now ..."
+curl -s -k --user "${SONAR_USER}"  ${SONAR_URL}/api/qualitygates/show?id=${ID} | jq .
+
+echo "Done!"
+{{- end}}

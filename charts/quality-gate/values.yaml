@@ -1,0 +1,28 @@
+# override these defaults set in templates
+
+#adminCreds="admin:admin"
+
+# default quality gate
+qualityGate:
+  name: "AppDefault"
+  setAsDefault: true
+  new_coverage:
+    enabled: true
+    op: "LT"
+    error: 80
+  new_security_rating:
+    enabled: true
+    op: "GT"
+    error: 1
+  new_reliability_rating:
+    enabled: true
+    op: "GT"
+    error: 1
+  new_maintainability_rating:
+    enabled: true
+    op: "GT"
+    error: 1
+  new_duplicated_lines_density:
+    enabled: true
+    op: "GT"
+    error: 3
