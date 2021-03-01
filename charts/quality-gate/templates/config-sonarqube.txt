@@ -1,6 +1,6 @@
 {{- define "config-sonarqube" }}
 #!/bin/bash
-#set -x
+set -x
 
 # a standalone script for configuring sonarqube
 
@@ -13,7 +13,7 @@ oc -n ${NS} wait pod -lapp=sonarqube --for=condition=Ready --timeout=600s || exi
 sleep 2
 
 # check if gate exists, rename it to -old if it does (it may be default so cannot delete)
-curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/show?name="{{ .Values.qualityGateName | default "AppDefault" }}"
+curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/show?name="{{ .Values.qualityGateName | default "AppDefault" }}" 1>/dev/null
 if [ $? -eq 0 ]; then
   echo Quality Gate {{ .Values.qualityGateName | default "AppDefault" }} already exists, renaming as {{ .Values.qualityGateName | default "AppDefault" }}-old
   ID=$(curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/show?name={{ .Values.qualityGateName | default "AppDefault" }} | jq .id)
