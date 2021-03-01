@@ -1,6 +1,6 @@
 {{- define "config-sonarqube" }}
 #!/bin/bash
-set -x
+#set -x
 
 # a standalone script for configuring sonarqube
 
