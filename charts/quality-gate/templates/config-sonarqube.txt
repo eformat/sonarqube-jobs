@@ -10,7 +10,7 @@ SONAR_URL=https://$(oc -n ${NS} get route sonarqube -o custom-columns=ROUTE:.spe
 
 echo "waiting for sonarqube pod ready..."
 oc -n ${NS} wait pod -lapp=sonarqube --for=condition=Ready --timeout=600s || exit $?
-sleep 2
+sleep 30
 
 # check if gate exists, rename it to -old if it does (it may be default so cannot delete)
 MSG=$(curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/show?name="{{ .Values.qualityGateName | default "AppDefault" }}")
