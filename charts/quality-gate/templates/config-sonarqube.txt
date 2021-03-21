@@ -5,7 +5,7 @@
 # a standalone script for configuring sonarqube
 
 NS=$(cat /run/secrets/kubernetes.io/serviceaccount/namespace)
-SONAR_USER={{ .Values.adminCreds | default "admin:admin" }}
+SONAR_USER={{ .Values.adminCreds | default "admin:admin123" }}
 SONAR_URL=https://$(oc -n ${NS} get route sonarqube -o custom-columns=ROUTE:.spec.host --no-headers)
 
 echo "waiting for sonarqube pod ready..."
