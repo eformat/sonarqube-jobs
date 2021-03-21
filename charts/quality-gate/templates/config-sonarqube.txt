@@ -24,7 +24,7 @@ fi
 # create default quality gate
 echo "creating {{ .Values.qualityGate.name | default "AppDefault" }} quality gate"
 ID=$(curl -s -k --user "${SONAR_USER}" -X POST ${SONAR_URL}/api/qualitygates/create?name="{{ .Values.qualityGateName | default "AppDefault" }}" | jq .id)
-if [ null == "${ID}"]; then
+if [ null == "${ID}" ]; then
   echo "Null ID, Quality Gate may already exist, exiting"
   exit 0
 fi
